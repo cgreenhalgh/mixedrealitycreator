@@ -245,6 +245,93 @@ function refresh_item_context_list() {
     return false;
 }
 
+function refresh_member_list() {
+	var table = $('#member_list_table');
+    prepare_table(table);
+    try {
+    	var items = null;
+    	var members = null;
+        $.ajax({ url: 'item/',
+            type: 'GET',
+            contentType: 'application/json',
+            processData: false,
+            data: null,
+            dataType: 'json',
+            success: function success(data, status) {
+                //  debug
+        		items = data;
+        		if (members!=null)
+        			update_member_list(items, members);
+        	},
+            error: function error(req, status) {
+                error_table(table, status + ' (' + req.status + ': ' + req.statusText + ')');
+            }
+        });
+        $.ajax({ url: 'item/'+item_id+'/member/',
+            type: 'GET',
+            contentType: 'application/json',
+            processData: false,
+            data: null,
+            dataType: 'json',
+            success: function success(data, status) {
+        		members = data;
+        		if (items!=null)
+        			update_member_list(items, members);
+
+        	},
+            error: function error(req, status) {
+                error_table(table, status + ' (' + req.status + ': ' + req.statusText + ')');
+            }
+        });
+    } catch (err) {
+        error_table(table, err.name + ': ' + err.message); //$.toJSON(err));
+    }
+}
+function update_member_list(items, members) {
+	var table = $('#member_list_table');
+	var member_map = {};
+	for (var member in members) 
+		member_map[member.itemId] = member;
+	var properties = ['id','name','type','metadata','blobUrl'];//,'isMember','memberMetadata','memberSortValue'];
+	var data = [];
+	for (var i=0; i<items.length; i++) {
+		var item = Object(items[i]);
+		var member = member_map[item.id];
+		if (member==undefined) {
+			item.isMember = false;
+		} else {
+			item.isMember = true;
+			item.memberMetadata = member.metadata;
+			item.memberSortValue = member.sortValue;
+		}		
+		data[data.length] = item;
+	}
+
+	//update table
+	$('tr', table).remove();
+    var header = '<tr>';
+    for (var i = 0; i < properties.length; i++) {
+        header += '<td class="list_item">' + properties[i] + '</td>';
+    }
+    header += '<td>memberMetadata</td><td>memberSortValue</td><td>Member actions</td>';
+    header += '</tr>';
+    table.append(header);
+    for (var di = 0; di < data.length; di++) {
+        var item = data[di];
+        var row = '<tr>';
+        for (var i = 0; i < properties.length; i++) {
+            row += '<td class="list_item">' + item[properties[i]] + '</td>';
+        }
+        row += '<td><input type="text" value="' + item.memberMetadata + '"/></td><td><input type="text" value="' + item.memberSortValue + '"/></td>';
+        if (item.isMember)
+            row += '<td><input type="button" value="Update"/><input type="button" value="Remove"/></td>';
+        else
+        	row += '<td><input type="button" value="Add"/></td>';
+        row += '</tr>';
+        table.append(row);
+    }
+
+}
 
 // loaded...
 $(document).ready(function() {

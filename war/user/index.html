@@ -11,6 +11,7 @@
 		<a href="test">Test</a>
 		<input type="button" value="Item List" onclick="show_div('item_list')"/>
 		<input type="button" value="Item" onclick="show_div('item')"/>
+		<input type="button" value="Item" onclick="show_div('member_list')"/>
 		<div id="item_list">
 			<p>All Items</p>
 			<table class="list" id="item_list_table">
@@ -38,6 +39,13 @@
 			<br/>
 			<input type="button" value="Refresh" onclick="refresh_item_context_list()"/>
 			
+		</div>
+		<div id="member_list">
+			<p>All Items as Members</p>
+			<table class="list" id="member_list_table">
+			</table>
+			<br/>
+			<input type="button" value="Refresh" onclick="refresh_member_list()"/>
 		</div>
 	</body>
 </html>
