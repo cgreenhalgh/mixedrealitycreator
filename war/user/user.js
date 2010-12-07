@@ -114,7 +114,7 @@ function refresh_table_item(table, properties, url, editable) {
 
 function get_input_value(item, table, name) {
     var value = String($('input[name=' + name + ']', table).attr('value'))
-	alert('get_input_value('+item+','+table+','+name+') value='+value);
+//	alert('get_input_value('+item+','+table+','+name+') value='+value);
 	if (value!=undefined && value.length>0)
 		item[name] = value;
 }
@@ -132,12 +132,18 @@ function refresh_item(id) {
         // empty
         var properties = ['name', 'type', 'metadata', 'blobUrl'];//'creator', 'created', 'topLevel'
         update_table_item(table, properties, { metadata: '{}' }, true);
+        var member_table = $('#item_member_table');
+        var context_table = $('#item_member_table');
+        $('tr', member_table).remove();
+        $('tr', context_table).remove();
         return false;
     }
     //alert('refresh game ' + id);
     var properties = ['id', 'name', 'type', 'metadata', 'topLevel', 'blobUrl'];//'creator', 'created', 
     refresh_table_item(table, properties, 'item/' + id, true);
-
+    refresh_item_member_list();
+    refresh_item_context_list();
+    
     show_div('item');
 
     return false;
@@ -183,7 +189,7 @@ function add_update_item() {
     	// don't include id!
     	//item.id = item_id;
     	var data = $.toJSON(item);
-    	alert('update: '+data);
+    	//alert('update: '+data);
         $('tr', table).remove();
         table.append('<tr><td>Saving...</td></tr>');
         try {
@@ -216,6 +222,26 @@ function refresh_item_list() {
     var table = $('#item_list_table');
     var properties = ['id', 'name', 'type', 'creator', 'created', 'metadata', 'topLevel', 'blobUrl'];
     refresh_table_list(table, properties, 'item/', 'refresh_item');
+    return false;
+}
+
+function refresh_item_member_list() {
+	if (item_id==null) {
+		return false;
+	}
+    var table = $('#item_member_list_table');
+    var properties = ['id', 'item_id', 'creator', 'created', 'metadata', 'sortValue'];
+    refresh_table_list(table, properties, 'item/'+item_id+'/member/', 'refresh_item');
+    return false;
+}
+
+function refresh_item_context_list() {
+	if (item_id==null) {
+		return false;
+	}
+    var table = $('#item_context_list_table');
+    var properties = ['id', 'context_id', 'creator', 'created', 'metadata', 'sortValue'];
+    refresh_table_list(table, properties, 'item/'+item_id+'/context/', 'refresh_item');
     return false;
 }
 

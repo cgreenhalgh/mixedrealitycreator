@@ -177,9 +177,12 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 	@Override
 	protected CRUDServlet getChildScopeServlet(String id, String childScope)
 			throws RequestException {
-		//if (childScope.equals("client")) {
-		//return new GameClientCRUDServlet("gameKey", Game.idToKey(id), 2);
-		//}
+		if (childScope.equals("member")) {
+			return new ItemMembershipCRUDServlet("contextKey", Item.idToKey(id), 2, true);
+		}
+		if (childScope.equals("context")) {
+			return new ItemMembershipCRUDServlet("itemKey", Item.idToKey(id), 2, true);
+		}
 		// TODO Auto-generated method stub
 		return super.getChildScopeServlet(id, childScope);
 	}

@@ -19,12 +19,25 @@
 			<input type="button" value="Refresh" onclick="refresh_item_list()"/>
 		</div>
 		<div id="item">
-			<p>Configuration</p>
+			<p>Item</p>
 			<table class="item" id="item_table">
 			</table>
 			<input type="button" value="Refresh" onclick="refresh_item()"/>
 			<input type="button" value="Reset" onclick="reset_item()"/>
 			<input type="button" value="Add/Update" onclick="add_update_item()"/>
+			<br/>
+			<p>Members</p>
+			<table class="list" id="item_member_list_table">
+			</table>
+			<br/>
+			<input type="button" value="Refresh" onclick="refresh_item_member_list()"/>
+			<br/>
+			<p>Contexts</p>
+			<table class="list" id="item_context_list_table">
+			</table>
+			<br/>
+			<input type="button" value="Refresh" onclick="refresh_item_context_list()"/>
+			
 		</div>
 	</body>
 </html>
