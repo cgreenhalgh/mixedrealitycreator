@@ -1,9 +1,30 @@
 <html>
 	<head>
 		<title>MixedRealityCreator User Index</title>
+	    <script type = "text/javascript" src="../lib/jquery-1.4.2.min.js"></script>
+	    <script type = "text/javascript" src="../lib/jquery.json-2.2.min.js"></script>
+		<script type="text/javascript" src="user.js"></script>
+	    <link rel="stylesheet" type="text/css" href="user.css" />
 	</head>
 	<body>
 		<h1>MixedRealityCreator User Index</h1>
 		<a href="test">Test</a>
+		<input type="button" value="Item List" onclick="show_div('item_list')"/>
+		<input type="button" value="Item" onclick="show_div('item')"/>
+		<div id="item_list">
+			<p>All Items</p>
+			<table class="list" id="item_list_table">
+			</table>
+			<br/>
+			<input type="button" value="Refresh" onclick="refresh_item_list()"/>
+		</div>
+		<div id="item">
+			<p>Configuration</p>
+			<table class="item" id="item_table">
+			</table>
+			<input type="button" value="Refresh" onclick="refresh_item()"/>
+			<input type="button" value="Reset" onclick="reset_item()"/>
+			<input type="button" value="Add/Update" onclick="add_update_item()"/>
+		</div>
 	</body>
 </html>

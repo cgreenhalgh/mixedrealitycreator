@@ -126,9 +126,12 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 		return gc;
 	}
 
-	@Override
-	protected Key validateCreate(Object o) throws RequestException {
-		Item i = (Item)o;
+	/** common checks
+	 * 
+	 * @param i
+	 * @throws RequestException
+	 */
+	private void validateUpdateOrCreate(Item i) throws RequestException {
 		if (i.getType()==null)
 			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No type specified for Item");
 		if (i.getName()==null)
@@ -136,11 +139,36 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 		if (i.getMetadata()==null)
 			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No metadata specified for Item");
 		if (i.getCreator()==null)
-			throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED,"No creator specified for Item");
+			throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED,"No creator specified for Item");		
+	}
+	@Override
+	protected Key validateCreate(Object o) throws RequestException {
+		Item i = (Item)o;
+		validateUpdateOrCreate(i);
 		i.setCreated(System.currentTimeMillis());
 		String id = GUIDFactory.newGUID();
 		i.setKey(Item.idToKey(id));
 		return i.getKey();
+	}
+
+	/* (non-Javadoc)
+	 * @see uk.ac.horizon.ug.mrcreator.http.CRUDServlet#validateUpdate(java.lang.Object, java.lang.Object)
+	 */
+	@Override
+	protected void validateUpdate(Object newobj, Object oldobj)
+			throws RequestException {
+		Item i = (Item)newobj;
+		validateUpdateOrCreate(i);
+		Item oi = (Item)oldobj;
+		// these can't be changed...
+		i.setCreated(oi.getCreated());
+		i.setTopLevel(oi.isTopLevel());
+		if (!i.getCreator().equals(oi.getCreator()))
+			throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED, "Update cannot change creator: "+i);
+		if (i.getId()!=null && !i.getId().equals(oi.getId()))
+			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST, "Update ID does not match path ID ("+i.getId()+" / "+oi.getId()+")");
+		// make sure you clone the key!
+		i.setKey(oi.getKey());
 	}
 
 	/* (non-Javadoc)

@@ -347,7 +347,15 @@ public abstract class CRUDServlet extends HttpServlet {
 		}
 	}
 
-	protected abstract Key validateCreate(Object o) throws RequestException;
+	protected Key validateCreate(Object o) throws RequestException {
+		throw new RequestException(HttpServletResponse.SC_NOT_IMPLEMENTED, "Create not support for "+getObjectClass());
+	}
+	protected void validateUpdate(Object newobj, Object oldobj) throws RequestException {
+		throw new RequestException(HttpServletResponse.SC_NOT_IMPLEMENTED, "Update not support for "+getObjectClass());
+	}
+	protected Key validateDelete(Object o) throws RequestException {
+		throw new RequestException(HttpServletResponse.SC_NOT_IMPLEMENTED, "Delete not support for "+getObjectClass());
+	}
 
 	private Object parseObject(HttpServletRequest req) throws RequestException {
 		try {
@@ -379,9 +387,81 @@ public abstract class CRUDServlet extends HttpServlet {
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		logger.log(Level.INFO, "doPost("+req.getContextPath()+")");
-		// TODO: Update
-		super.doPut(req, resp);
+		//logger.log(Level.INFO, "doPost("+req.getContextPath()+")");
+		try {
+			// get ID
+			logger.log(Level.INFO, "doPut("+req.getPathInfo()+")");
+			String pathInfo = req.getPathInfo();
+			if (pathInfo==null)
+				pathInfo = "";
+			String pathParts[] = pathInfo.split("/");
+			// ignore first "part" '' if there is a leading '/' in pathInfo (there should be)
+			int discardPathParts = this.discardPathParts+(pathParts.length>0 && pathParts[0].length()==0 ? 1 : 0);
+			if (pathParts.length<discardPathParts) {
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+pathInfo);
+			}
+			if (pathParts.length==discardPathParts) {
+				throw new RequestException(HttpServletResponse.SC_BAD_REQUEST, "Cannot PUT to collection "+req.getPathInfo());
+			}
+			// possible filtered query...
+			String id = pathParts[discardPathParts];
+			Key key = idToKey(id);
+			if (key==null) {
+				throw new RequestException(HttpServletResponse.SC_NOT_FOUND, getObjectClass().getSimpleName()+" "+id+" could not map to key");
+			}
+			if (pathParts.length>discardPathParts+1) {
+				String childScope = pathParts[discardPathParts+1];
+				CRUDServlet childScopeServlet = getChildScopeServlet(id, childScope);
+				childScopeServlet.doPut(req, resp);
+				return;
+			}
+			// parse new value
+			Object newobj = parseObject(req);
+
+			EntityManager em = EMF.get().createEntityManager();
+			try {
+				// check that object exists
+				Class clazz = getObjectClass();
+				Object obj = em.find(clazz, key);
+				if (obj==null) {
+					throw new RequestException(HttpServletResponse.SC_NOT_FOUND, getObjectClass().getSimpleName()+" "+id+" not found");
+				}
+				// check (if required) that object is owned by requestor
+				if (filterByCreator) {
+					String creator = getCreator(obj);
+					String requestCreator = getRequestCreator(req);
+					if (!requestCreator.equals(creator)) 
+						throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED, "Requestor is not creator of "+getObjectClass().getSimpleName()+" "+id);
+					// set creator
+					setCreator(newobj, creator);
+				}
+				// validate update
+				validateUpdate(newobj, obj);
+				// perform update
+				em.merge(newobj);
+				
+				resp.setCharacterEncoding(ENCODING);
+				resp.setContentType(JSON_MIME_TYPE);		
+				Writer w = new OutputStreamWriter(resp.getOutputStream(), ENCODING);
+				JSONWriter jw = new JSONWriter(w);
+				writeObject(jw, newobj);
+				w.close();
+			}
+			catch (RequestException re) {
+				throw re;
+			}
+			catch (Exception e) {
+				logger.log(Level.WARNING, "Updating object "+id+" of type "+getObjectClass(), e);
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
+			}
+			finally {
+				em.close();
+			}
+		}
+		catch (RequestException re) {
+			resp.sendError(re.getErrorCode(), re.getMessage());
+			return;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -390,10 +470,77 @@ public abstract class CRUDServlet extends HttpServlet {
 	@Override
 	protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		logger.log(Level.INFO, "doDelete("+req.getContextPath()+")");
-		// TODO: delete
-		super.doDelete(req, resp);
+		try {
+			// get ID
+			logger.log(Level.INFO, "doDelete("+req.getPathInfo()+")");
+			String pathInfo = req.getPathInfo();
+			if (pathInfo==null)
+				pathInfo = "";
+			String pathParts[] = pathInfo.split("/");
+			// ignore first "part" '' if there is a leading '/' in pathInfo (there should be)
+			int discardPathParts = this.discardPathParts+(pathParts.length>0 && pathParts[0].length()==0 ? 1 : 0);
+			if (pathParts.length<discardPathParts) {
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+pathInfo);
+			}
+			if (pathParts.length==discardPathParts) {
+				throw new RequestException(HttpServletResponse.SC_BAD_REQUEST, "Cannot PUT to collection "+req.getPathInfo());
+			}
+			// possible filtered query...
+			String id = pathParts[discardPathParts];
+			Key key = idToKey(id);
+			if (key==null) {
+				throw new RequestException(HttpServletResponse.SC_NOT_FOUND, getObjectClass().getSimpleName()+" "+id+" could not map to key");
+			}
+			if (pathParts.length>discardPathParts+1) {
+				String childScope = pathParts[discardPathParts+1];
+				CRUDServlet childScopeServlet = getChildScopeServlet(id, childScope);
+				childScopeServlet.doDelete(req, resp);
+				return;
+			}
+
+			EntityManager em = EMF.get().createEntityManager();
+			try {
+				// check that object exists
+				Class clazz = getObjectClass();
+				Object obj = em.find(clazz, key);
+				if (obj==null) {
+					throw new RequestException(HttpServletResponse.SC_NOT_FOUND, getObjectClass().getSimpleName()+" "+id+" not found");
+				}
+				// check (if required) that object is owned by requestor
+				if (filterByCreator) {
+					String creator = getCreator(obj);
+					String requestCreator = getRequestCreator(req);
+					if (!requestCreator.equals(creator)) 
+						throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED, "Requestor is not creator of "+getObjectClass().getSimpleName()+" "+id);
+				}
+				// validate delete
+				validateDelete(obj);
+				// perform update
+				em.remove(obj);
+				
+				// write back old value?
+				resp.setCharacterEncoding(ENCODING);
+				resp.setContentType(JSON_MIME_TYPE);		
+				Writer w = new OutputStreamWriter(resp.getOutputStream(), ENCODING);
+				JSONWriter jw = new JSONWriter(w);
+				writeObject(jw, obj);
+				w.close();
+			}
+			catch (RequestException re) {
+				throw re;
+			}
+			catch (Exception e) {
+				logger.log(Level.WARNING, "Deleting object "+id+" of type "+getObjectClass(), e);
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
+			}
+			finally {
+				em.close();
+			}
+		}
+		catch (RequestException re) {
+			resp.sendError(re.getErrorCode(), re.getMessage());
+			return;
+		}
 	}
 	
 }
