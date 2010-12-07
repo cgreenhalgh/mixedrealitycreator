@@ -160,6 +160,18 @@ public class Item {
 	public void setMetadata(String metadata) {
 		this.metadata = metadata;
 	}
+	/**
+	 * @return the topLevel
+	 */
+	public boolean isTopLevel() {
+		return topLevel;
+	}
+	/**
+	 * @param topLevel the topLevel to set
+	 */
+	public void setTopLevel(boolean topLevel) {
+		this.topLevel = topLevel;
+	}
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */

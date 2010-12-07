@@ -1,38 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-xmlns="http://java.sun.com/xml/ns/javaee"
-xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
-	<servlet>
-		<servlet-name>Mixedrealitycreator</servlet-name>
-		<servlet-class>uk.ac.horizon.ug.mrcreator.MixedrealitycreatorServlet</servlet-class>
-	</servlet>
-	<servlet-mapping>
-		<servlet-name>Mixedrealitycreator</servlet-name>
-		<url-pattern>/user/test</url-pattern>
-	</servlet-mapping>
-	<welcome-file-list>
-		<welcome-file>index.html</welcome-file>
-	</welcome-file-list>
-	<!-- Any authenticated user -->
-    <security-constraint> 
-        <web-resource-collection> 
-	        <web-resource-name>user pages</web-resource-name> 
-            <url-pattern>/user/*</url-pattern> 
-        </web-resource-collection> 
-        <auth-constraint> 
-            <role-name>*</role-name> 
-        </auth-constraint> 
-    </security-constraint>
-	<!-- Webapp admin user -->
-    <security-constraint> 
-        <web-resource-collection> 
-	        <web-resource-name>admin pages</web-resource-name> 
-            <url-pattern>/admin/*</url-pattern> 
-        </web-resource-collection> 
-        <auth-constraint> 
-            <role-name>admin</role-name> 
-        </auth-constraint> 
-    </security-constraint>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+ <servlet>
+  <servlet-name>Mixedrealitycreator</servlet-name>
+  <servlet-class>uk.ac.horizon.ug.mrcreator.MixedrealitycreatorServlet</servlet-class>
+ </servlet>
+ <servlet>
+  <servlet-name>ItemCRUDServlet</servlet-name>
+  <servlet-class>uk.ac.horizon.ug.mrcreator.user.ItemCRUDServlet</servlet-class>
+ </servlet>
+ <servlet>
+  <servlet-name>TopLevelItemCRUDServlet</servlet-name>
+  <servlet-class>uk.ac.horizon.ug.mrcreator.user.TopLevelItemServlet</servlet-class>
+ </servlet>
+ <servlet-mapping>
+  <servlet-name>Mixedrealitycreator</servlet-name>
+  <url-pattern>/user/test</url-pattern>
+ </servlet-mapping>
+ <servlet-mapping>
+  <servlet-name>ItemCRUDServlet</servlet-name>
+  <url-pattern>/user/item/*</url-pattern>
+ </servlet-mapping>
+ <servlet-mapping>
+  <servlet-name>TopLevelItemCRUDServlet</servlet-name>
+  <url-pattern>/user/toplevelitem/*</url-pattern>
+ </servlet-mapping>
+ <welcome-file-list>
+  <welcome-file>index.html</welcome-file>
+ </welcome-file-list>
+ <!-- Any authenticated user -->
+ <security-constraint>
+  <web-resource-collection>
+   <web-resource-name>user pages</web-resource-name>
+   <url-pattern>/user/*</url-pattern>
+  </web-resource-collection>
+  <auth-constraint>
+   <role-name>*</role-name>
+  </auth-constraint>
+ </security-constraint>
+ <!-- Webapp admin user -->
+ <security-constraint>
+  <web-resource-collection>
+   <web-resource-name>admin pages</web-resource-name>
+   <url-pattern>/admin/*</url-pattern>
+  </web-resource-collection>
+  <auth-constraint>
+   <role-name>admin</role-name>
+  </auth-constraint>
+ </security-constraint>
+ <login-config>
+  <auth-method>BASIC</auth-method>
+ </login-config>
 </web-app>
