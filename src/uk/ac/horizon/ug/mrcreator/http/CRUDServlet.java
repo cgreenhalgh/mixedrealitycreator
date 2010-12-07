@@ -286,15 +286,40 @@ public abstract class CRUDServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		logger.log(Level.INFO, "doPost("+req.getContextPath()+")");
-		String pathInfo = req.getPathInfo();
-		if (pathInfo==null || "/".equals(pathInfo) || pathInfo.length()==0) {
-			// get all
-			doCreate(req, resp);
+		try {
+			logger.log(Level.INFO, "doPost("+req.getPathInfo()+")");
+			String pathInfo = req.getPathInfo();
+			if (pathInfo==null)
+				pathInfo = "";
+			String pathParts[] = pathInfo.split("/");
+			// ignore first "part" '' if there is a leading '/' in pathInfo (there should be)
+			int discardPathParts = this.discardPathParts+(pathParts.length>0 && pathParts[0].length()==0 ? 1 : 0);
+			if (pathParts.length<discardPathParts) {
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+pathInfo);
+			}
+			if (pathParts.length==discardPathParts) {
+				doCreate(req, resp);
+				return;
+			}
+			// possible filtered query...
+			String id = pathParts[discardPathParts];
+			Key key = idToKey(id);
+			if (key==null) {
+				throw new RequestException(HttpServletResponse.SC_NOT_FOUND, getObjectClass().getSimpleName()+" "+id+" could not map to key");
+			}
+			if (pathParts.length>discardPathParts+1) {
+				String childScope = pathParts[discardPathParts+1];
+				CRUDServlet childScopeServlet = getChildScopeServlet(id, childScope);
+				childScopeServlet.doPost(req, resp);
+				return;
+			}
+			// ?!
+			super.doPost(req, resp);
+		}
+		catch (RequestException re) {
+			resp.sendError(re.getErrorCode(), re.getMessage());
 			return;
 		}
-		super.doPost(req, resp);
 	}
 
 	/** Create on POST.

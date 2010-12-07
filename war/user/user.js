@@ -287,6 +287,7 @@ function refresh_member_list() {
         error_table(table, err.name + ': ' + err.message); //$.toJSON(err));
     }
 }
+var member_data = null;
 function update_member_list(items, members) {
 	var table = $('#member_list_table');
 	var member_map = {};
@@ -299,14 +300,16 @@ function update_member_list(items, members) {
 		var member = member_map[item.id];
 		if (member==undefined) {
 			item.isMember = false;
-		} else {
+			item.memberMetadata = '{}';
+			item.memberSortValue = '';        } else {
 			item.isMember = true;
 			item.memberMetadata = member.metadata;
 			item.memberSortValue = member.sortValue;
 		}		
 		data[data.length] = item;
 	}
-
+    member_data = data;
+    
 	//update table
 	$('tr', table).remove();
     var header = '<tr>';
@@ -322,15 +325,43 @@ function update_member_list(items, members) {
         for (var i = 0; i < properties.length; i++) {
             row += '<td class="list_item">' + item[properties[i]] + '</td>';
         }
-        row += '<td><input type="text" value="' + item.memberMetadata + '"/></td><td><input type="text" value="' + item.memberSortValue + '"/></td>';
+        row += '<td><input type="text"  name="metadata" value="' + item.memberMetadata + '"/></td><td><input type="text" name="sortValue" value="' + item.memberSortValue + '"/></td>';
         if (item.isMember)
             row += '<td><input type="button" value="Update"/><input type="button" value="Remove"/></td>';
         else
-        	row += '<td><input type="button" value="Add"/></td>';
+        	row += '<td><input type="button" value="Add" onclick="add_member('+di+');"/></td>';
         row += '</tr>';
         table.append(row);
     }
-
+}
+function add_member(di) {
+    var item = member_data[di];
+    var membership = {};
+    membership.itemId = member_data[di].id;
+    membership.contextId = item_id;
+    var table = $('#member_list_table');
+    membership.metadata = String($('input[name=metadata]',table).attr('value'));
+    membership.sortValue = String($('input[name=sortValue]',table).attr('value'));
+    var data = $.toJSON(membership);
+    try {
+        var url = 'item/'+item_id+'/member/';
+        alert('add_member(' + di + ') to ' + url + ' : ' + data);
+        $.ajax({ url: url,
+            type: 'POST',
+            contentType: 'application/json',
+            processData: false,
+            data: data,
+            dataType: 'json',
+            success: function success(data, status) {
+                refresh_member_list();
+            },
+            error: function error(req, status) {
+            alert(status + ' (' + req.status + ': ' + req.statusText + ')');
+            }
+        });
+    } catch (err) {
+        alert(err.name + ': ' + err.message); //$.toJSON(err));
+    }
 }
 
 // loaded...
