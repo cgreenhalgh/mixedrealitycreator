@@ -71,6 +71,28 @@ public abstract class CRUDServlet extends HttpServlet {
 	/** default cons */
 	public CRUDServlet() {
 	}
+	/**
+	 * @return the listFilterPropertyName
+	 */
+	public String getListFilterPropertyName() {
+		return listFilterPropertyName;
+	}
+
+
+	/**
+	 * @return the listFilterPropertyValue
+	 */
+	public Object getListFilterPropertyValue() {
+		return listFilterPropertyValue;
+	}
+
+
+	/**
+	 * @return the discardPathParts
+	 */
+	public int getDiscardPathParts() {
+		return discardPathParts;
+	}
 	/** filter cons */
 	/** the persisent class to be managed */
 	protected abstract Class getObjectClass();

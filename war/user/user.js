@@ -136,6 +136,9 @@ function refresh_item(id) {
         var context_table = $('#item_member_table');
         $('tr', member_table).remove();
         $('tr', context_table).remove();
+
+        refresh_member_list();
+
         return false;
     }
     //alert('refresh game ' + id);
@@ -143,6 +146,8 @@ function refresh_item(id) {
     refresh_table_item(table, properties, 'item/' + id, true);
     refresh_item_member_list();
     refresh_item_context_list();
+
+    refresh_member_list();
     
     show_div('item');
 
@@ -230,7 +235,7 @@ function refresh_item_member_list() {
 		return false;
 	}
     var table = $('#item_member_list_table');
-    var properties = ['id', 'item_id', 'creator', 'created', 'metadata', 'sortValue'];
+    var properties = ['id', 'itemId', 'creator', 'created', 'metadata', 'sortValue'];
     refresh_table_list(table, properties, 'item/'+item_id+'/member/', 'refresh_item');
     return false;
 }
@@ -240,14 +245,16 @@ function refresh_item_context_list() {
 		return false;
 	}
     var table = $('#item_context_list_table');
-    var properties = ['id', 'context_id', 'creator', 'created', 'metadata', 'sortValue'];
+    var properties = ['id', 'contextId', 'creator', 'created', 'metadata', 'sortValue'];
     refresh_table_list(table, properties, 'item/'+item_id+'/context/', 'refresh_item');
     return false;
 }
 
 function refresh_member_list() {
 	var table = $('#member_list_table');
-    prepare_table(table);
+	prepare_table(table);
+	if (item_id == null)
+	    return;
     try {
     	var items = null;
     	var members = null;
@@ -289,11 +296,16 @@ function refresh_member_list() {
 }
 var member_data = null;
 function update_member_list(items, members) {
+
 	var table = $('#member_list_table');
 	var member_map = {};
-	for (var member in members) 
-		member_map[member.itemId] = member;
-	var properties = ['id','name','type','metadata','blobUrl'];//,'isMember','memberMetadata','memberSortValue'];
+	for (var i = 0; i < members.length; i++) {
+	    var member = members[i];
+	    member_map[member.itemId] = member;
+	}
+	//alert('member_map: '+$.toJSON(member_map)+'\nmembers: ' + $.toJSON(members));
+
+	var properties = ['id', 'name', 'type', 'metadata', 'blobUrl']; //,'isMember','memberMetadata','memberSortValue'];
 	var data = [];
 	for (var i=0; i<items.length; i++) {
 		var item = Object(items[i]);
@@ -305,6 +317,7 @@ function update_member_list(items, members) {
 			item.isMember = true;
 			item.memberMetadata = member.metadata;
 			item.memberSortValue = member.sortValue;
+			item.memberId = member.id;
 		}		
 		data[data.length] = item;
 	}
@@ -316,6 +329,7 @@ function update_member_list(items, members) {
     for (var i = 0; i < properties.length; i++) {
         header += '<td class="list_item">' + properties[i] + '</td>';
     }
+    //header += '<td>memberId</td>';
     header += '<td>memberMetadata</td><td>memberSortValue</td><td>Member actions</td>';
     header += '</tr>';
     table.append(header);
@@ -325,9 +339,10 @@ function update_member_list(items, members) {
         for (var i = 0; i < properties.length; i++) {
             row += '<td class="list_item">' + item[properties[i]] + '</td>';
         }
+        //row += '<td><input type="text"  name="metadata" value="' + item.memberId + '"/></td>';
         row += '<td><input type="text"  name="metadata" value="' + item.memberMetadata + '"/></td><td><input type="text" name="sortValue" value="' + item.memberSortValue + '"/></td>';
         if (item.isMember)
-            row += '<td><input type="button" value="Update"/><input type="button" value="Remove"/></td>';
+            row += '<td><input type="button" value="Update" onclick="update_member(' + di + ');"/><input type="button" value="Remove" onclick="delete_member(' + di + ');"/></td>';
         else
         	row += '<td><input type="button" value="Add" onclick="add_member('+di+');"/></td>';
         row += '</tr>';
@@ -345,7 +360,7 @@ function add_member(di) {
     var data = $.toJSON(membership);
     try {
         var url = 'item/'+item_id+'/member/';
-        alert('add_member(' + di + ') to ' + url + ' : ' + data);
+        //alert('add_member(' + di + ') to ' + url + ' : ' + data);
         $.ajax({ url: url,
             type: 'POST',
             contentType: 'application/json',
@@ -362,6 +377,60 @@ function add_member(di) {
     } catch (err) {
         alert(err.name + ': ' + err.message); //$.toJSON(err));
     }
+    return false;
+}
+function update_member(di) {
+    var item = member_data[di];
+    var membership = {};
+    membership.itemId = member_data[di].id;
+    membership.contextId = item_id;
+    var table = $('#member_list_table');
+    membership.metadata = String($('input[name=metadata]', table).attr('value'));
+    membership.sortValue = String($('input[name=sortValue]', table).attr('value'));
+    var data = $.toJSON(membership);
+    try {
+        var url = 'item/' + item_id + '/member/' + item.memberId;
+        //alert('update_member(' + di + ') to ' + url + ' : ' + data);
+        $.ajax({ url: url,
+            type: 'PUT',
+            contentType: 'application/json',
+            processData: false,
+            data: data,
+            dataType: 'json',
+            success: function success(data, status) {
+                refresh_member_list();
+            },
+            error: function error(req, status) {
+                alert(status + ' (' + req.status + ': ' + req.statusText + ')');
+            }
+        });
+    } catch (err) {
+        alert(err.name + ': ' + err.message); //$.toJSON(err));
+    }
+    return false;
+}
+function delete_member(di) {
+    var item = member_data[di];
+    try {
+        var url = 'item/' + item_id + '/member/' + item.memberId;
+        //alert('delete_member(' + di + ') to ' + url);
+        $.ajax({ url: url,
+            type: 'DELETE',
+            contentType: null,
+            processData: false,
+            data: null,
+            dataType: 'json',
+            success: function success(data, status) {
+                refresh_member_list();
+            },
+            error: function error(req, status) {
+                alert(status + ' (' + req.status + ': ' + req.statusText + ')');
+            }
+        });
+    } catch (err) {
+        alert(err.name + ': ' + err.message); //$.toJSON(err));
+    }
+    return false;
 }
 
 // loaded...

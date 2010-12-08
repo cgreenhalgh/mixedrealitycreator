@@ -28,9 +28,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 
+import com.google.appengine.api.datastore.Key;
+
 import uk.ac.horizon.ug.mrcreator.http.CRUDServlet;
 import uk.ac.horizon.ug.mrcreator.http.JsonConstants;
 import uk.ac.horizon.ug.mrcreator.http.RequestException;
+import uk.ac.horizon.ug.mrcreator.model.GUIDFactory;
 import uk.ac.horizon.ug.mrcreator.model.Item;
 import uk.ac.horizon.ug.mrcreator.model.Membership;
 
@@ -113,13 +116,101 @@ public class ItemMembershipCRUDServlet extends CRUDServlet implements JsonConsta
 	protected Object parseObject(JSONObject json) throws RequestException,
 			IOException, JSONException {
 		Membership gc = new Membership();
+		// implicit value(s) from servlet context
+		if (getListFilterPropertyName()!=null && getListFilterPropertyValue() instanceof Key) {
+			Key key = (Key)getListFilterPropertyValue();
+			if ("contextKey".equals(getListFilterPropertyName()))
+				gc.setContextKey(key);
+			else if ("itemKey".equals(getListFilterPropertyName()))
+				gc.setItemKey(key);
+		}
+		// passed values
 		Iterator keys = json.keys();
 		while(keys.hasNext()) {
 			String key = (String)keys.next();
+			if (CONTEXT_ID.equals(key))
+				gc.setContextKey(Item.idToKey(json.getString(key)));
+			else if (ITEM_ID.equals(key))
+				gc.setItemKey(Item.idToKey(json.getString(key)));
+			else if (METADATA.equals(key))
+				gc.setMetadata(json.getString(key));
+			else if (SORT_VALUE.equals(key))
+				gc.setSortValue(json.getString(key));
+			else
 				throw new JSONException("Unsupported key '"+key+"' in Membership: "+json);
-
-		}
+		}			
 		return gc;
+	}
+	/** common checks
+	 * 
+	 * @param i
+	 * @throws RequestException
+	 */
+	private void validateUpdateOrCreate(Membership i) throws RequestException {
+		if (i.getItemKey()==null)
+			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No item specified for Membership");
+		if (i.getContextKey()==null)
+			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No context specified for Membership");
+		//if (i.getMetadata()==null)
+		//throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No metadata specified for Item");
+		if (i.getCreator()==null)
+			throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED,"No creator specified for Membeship");		
+	}
+	@Override
+	protected Key validateCreate(Object o) throws RequestException {
+		Membership i = (Membership)o;
+		validateUpdateOrCreate(i);
+		i.setCreated(System.currentTimeMillis());
+		String id = GUIDFactory.newGUID();
+		i.setKey(Membership.idToKey(id));
+		return i.getKey();
+	}
+
+	/* (non-Javadoc)
+	 * @see uk.ac.horizon.ug.mrcreator.http.CRUDServlet#validateUpdate(java.lang.Object, java.lang.Object)
+	 */
+	@Override
+	protected void validateUpdate(Object newobj, Object oldobj)
+			throws RequestException {
+		Membership i = (Membership)newobj;
+		validateUpdateOrCreate(i);
+		Membership oi = (Membership)oldobj;
+		// these can't be changed...
+		i.setCreated(oi.getCreated());
+		if (!i.getCreator().equals(oi.getCreator()))
+			throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED, "Update cannot change creator: "+i);
+		if (i.getId()!=null && !i.getId().equals(oi.getId()))
+			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST, "Update ID does not match path ID ("+i.getId()+" / "+oi.getId()+")");
+		// make sure you clone the key!
+		i.setKey(oi.getKey());
+	}
+
+	/* (non-Javadoc)
+	 * @see uk.ac.horizon.ug.mrcreator.http.CRUDServlet#validateDelete(java.lang.Object)
+	 */
+	@Override
+	protected Key validateDelete(Object o) throws RequestException {
+		// ok
+		Membership m = (Membership)o;
+		return m.getKey();
+	}
+
+	/* (non-Javadoc)
+	 * @see uk.ac.horizon.ug.mrcreator.http.CRUDServlet#getCreator(java.lang.Object)
+	 */
+	@Override
+	protected String getCreator(Object o) {
+		Membership i = (Membership)o;
+		return i.getCreator();
+	}
+
+	/* (non-Javadoc)
+	 * @see uk.ac.horizon.ug.mrcreator.http.CRUDServlet#setCreator(java.lang.Object, java.lang.String)
+	 */
+	@Override
+	protected void setCreator(Object o, String creator) {
+		Membership i = (Membership)o;
+		i.setCreator(creator);
 	}
 
 }
