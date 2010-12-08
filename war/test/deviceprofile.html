@@ -1,0 +1,28 @@
+<html>
+	<head>
+		<title>MixedRealityCreator DeviceProfile Test</title>
+	    <script type = "text/javascript" src="../lib/jquery-1.4.2.min.js"></script>
+	    <script type = "text/javascript" src="../lib/jquery.json-2.2.min.js"></script>
+	    <script type="text/javascript" src="../lib/OpenLayers.js"></script>
+		<script type="text/javascript" src="../lib/common.js"></script>
+		<script type="text/javascript" src="test.js"></script>
+	    <link rel="stylesheet" href="theme/default/style.css" type="text/css" />
+	    <link rel="stylesheet" type="text/css" href="test.css" />
+	</head>
+	<body>
+		<h1>MixedRealityCreator DeviceProfile Test</h1>
+		<input type="button" value="Debug" onclick="show_div('debug')"/>
+		<input type="button" value="Map View" onclick="show_map()"/>
+		<div id="debug">
+			<p>Debug</p>
+			<table>
+				<tr><td>id</td></tr>
+				<tr><td id="id">Loading...</td></tr>
+			</table>
+		</div>
+		<div id="map_view">
+			<p>Currently selected Item as Map Overlay</p>
+		    <div id="map" class="smallmap"></div>
+		</div>
+	</body>
+</html>
