@@ -166,8 +166,8 @@ public abstract class CRUDServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		// TODO Auto-generated method stub
 		try {
+			// TODO move to static method and reuse
 			logger.log(Level.INFO, "doGet("+req.getPathInfo()+")");
 			String pathInfo = req.getPathInfo();
 			if (pathInfo==null)
