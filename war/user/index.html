@@ -15,6 +15,8 @@
 		<input type="button" value="Item" onclick="show_div('item')"/>
 		<input type="button" value="Member List" onclick="show_div('member_list')"/>
 		<input type="button" value="Map View" onclick="show_map()"/>
+		<input type="button" value="Device Profile List" onclick="show_div('deviceprofile_list')"/>
+		<input type="button" value="Device Profile" onclick="show_div('deviceprofile')"/>
 		<div id="item_list">
 			<p>All Items</p>
 			<table class="list" id="item_list_table">
@@ -41,6 +43,12 @@
 			</table>
 			<br/>
 			<input type="button" value="Refresh" onclick="refresh_item_context_list()"/>
+			<br/>
+			<p>Device Profiles</p>
+			<table class="list" id="item_deviceprofile_list_table">
+			</table>
+			<br/>
+			<input type="button" value="Refresh" onclick="refresh_item_deviceprofile_list()"/>
 			
 		</div>
 		<div id="member_list">
@@ -53,6 +61,21 @@
 		<div id="map_view">
 			<p>Currently selected Item as Map Overlay</p>
 		    <div id="map" class="smallmap"></div>
+		</div>
+		<div id="deviceprofile_list">
+			<p>All Items</p>
+			<table class="list" id="deviceprofile_list_table">
+			</table>
+			<br/>
+			<input type="button" value="Refresh" onclick="refresh_deviceprofile_list()"/>
+		</div>
+		<div id="deviceprofile">
+			<p>Item</p>
+			<table class="item" id="deviceprofile_table">
+			</table>
+			<input type="button" value="Refresh" onclick="refresh_deviceprofile()"/>
+			<input type="button" value="Reset" onclick="reset_deviceprofile()"/>
+			<input type="button" value="Add/Update" onclick="add_update_deviceprofile()"/>
 		</div>
 	</body>
 </html>

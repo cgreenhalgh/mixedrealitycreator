@@ -13,6 +13,10 @@
   <servlet-name>TopLevelItemCRUDServlet</servlet-name>
   <servlet-class>uk.ac.horizon.ug.mrcreator.user.TopLevelItemServlet</servlet-class>
  </servlet>
+ <servlet>
+  <servlet-name>DeviceProfileCRUDServlet</servlet-name>
+  <servlet-class>uk.ac.horizon.ug.mrcreator.user.DeviceProfileCRUDServlet</servlet-class>
+ </servlet>
  <servlet-mapping>
   <servlet-name>Mixedrealitycreator</servlet-name>
   <url-pattern>/user/test</url-pattern>
@@ -24,6 +28,10 @@
  <servlet-mapping>
   <servlet-name>TopLevelItemCRUDServlet</servlet-name>
   <url-pattern>/user/toplevelitem/*</url-pattern>
+ </servlet-mapping>
+ <servlet-mapping>
+  <servlet-name>DeviceProfileCRUDServlet</servlet-name>
+  <url-pattern>/user/deviceprofile/*</url-pattern>
  </servlet-mapping>
  <welcome-file-list>
   <welcome-file>index.html</welcome-file>

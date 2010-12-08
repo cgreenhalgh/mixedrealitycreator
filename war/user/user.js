@@ -149,7 +149,7 @@ function refresh_item(id) {
         var properties = ['name', 'type', 'metadata', 'blobUrl'];//'creator', 'created', 'topLevel'
         update_table_item(table, properties, { metadata: '{}' }, true);
         var member_table = $('#item_member_table');
-        var context_table = $('#item_member_table');
+        var context_table = $('#item_context_table');
         $('tr', member_table).remove();
         $('tr', context_table).remove();
 
@@ -162,6 +162,7 @@ function refresh_item(id) {
     refresh_table_item(table, properties, 'item/' + id, true);
     refresh_item_member_list();
     refresh_item_context_list();
+    refresh_item_deviceprofile_list();
 
     refresh_member_list();
     
@@ -252,7 +253,7 @@ function refresh_item_member_list() {
 	}
     var table = $('#item_member_list_table');
     var properties = ['id', 'itemId', 'creator', 'created', 'metadata', 'sortValue'];
-    refresh_table_list(table, properties, 'item/'+item_id+'/member/', 'refresh_item');
+    refresh_table_list(table, properties, 'item/'+item_id+'/member/');
     return false;
 }
 
@@ -262,7 +263,17 @@ function refresh_item_context_list() {
 	}
     var table = $('#item_context_list_table');
     var properties = ['id', 'contextId', 'creator', 'created', 'metadata', 'sortValue'];
-    refresh_table_list(table, properties, 'item/'+item_id+'/context/', 'refresh_item');
+    refresh_table_list(table, properties, 'item/'+item_id+'/context/');
+    return false;
+}
+
+function refresh_item_deviceprofile_list() {
+    if (item_id == null) {
+        return false;
+    }
+    var table = $('#item_deviceprofile_list_table');
+    var properties = ['id', 'name', 'itemType', 'metadata', 'requirements'];
+    refresh_table_list(table, properties, 'item/' + item_id + '/deviceprofile/', 'refresh_deviceprofile');
     return false;
 }
 
@@ -602,6 +613,112 @@ function update_markers(members) {
     markers.redraw();
 }
 
+// DeviceProfiles...
+var deviceprofile_id = null;
+
+function refresh_deviceprofile(id) {
+    // check/update id
+    if (id == undefined)
+        id = deviceprofile_id;
+    else
+        deviceprofile_id = id;
+    var table = $('#deviceprofile_table');
+    if (id == null) {
+        // empty
+        var properties = ['name', 'itemType', 'itemId', 'metadata', 'requirements']; //'creator', 'created', 'topLevel'
+        var itemId = (item_id!=null ? item_id : '');
+        update_table_item(table, properties, { metadata: '{}', itemId : itemId }, true);
+
+        return false;
+    }
+    //alert('refresh game ' + id);
+    var properties = ['id', 'name', 'itemType', 'itemId', 'metadata', 'requirements']; //'creator', 'created',
+    refresh_table_item(table, properties, 'deviceprofile/' + id, true);
+
+    show_div('deviceprofile');
+
+    return false;
+}
+
+function add_update_deviceprofile() {
+    //alert('add_update: item_id='+item_id);
+
+    var table = $('#deviceprofile_table');
+    var item = {};
+    get_input_value(item, table, 'name');
+    get_input_value(item, table, 'itemType');
+    get_input_value(item, table, 'itemId');
+    get_input_value(item, table, 'metadata');
+    get_input_value(item, table, 'requirements');
+
+    if (deviceprofile_id == null) {
+        //alert('add configuration...');
+        var data = $.toJSON(item);
+        $('tr', table).remove();
+        table.append('<tr><td>Saving...</td></tr>');
+        try {
+            $.ajax({ url: 'deviceprofile/',
+                type: 'POST',
+                contentType: 'application/json',
+                processData: false,
+                data: data,
+                dataType: 'json',
+                success: function success(data, status) {
+                    refresh_deviceprofile();
+                    refresh_deviceprofile_list();
+                    if (deviceprofile_id == null)
+                        show_div('deviceprofile_list');
+                },
+                error: function error(req, status) {
+                    error_table(table, status + ' (' + req.status + ': ' + req.statusText + ')');
+                }
+            });
+        } catch (err) {
+            error_table(table, err.name + ': ' + err.message); //$.toJSON(err));
+        }
+    }
+    else {
+        // don't include id!
+        //item.id = item_id;
+        var data = $.toJSON(item);
+        //alert('update: '+data);
+        $('tr', table).remove();
+        table.append('<tr><td>Saving...</td></tr>');
+        try {
+            $.ajax({ url: 'deviceprofile/' + deviceprofile_id,
+                type: 'PUT',
+                contentType: 'application/json',
+                processData: false,
+                data: data,
+                dataType: 'json',
+                success: function success(data, status) {
+                    refresh_deviceprofile();
+                    refresh_deviceprofile_list();
+                },
+                error: function error(req, status) {
+                    error_table(table, status + ' (' + req.status + ': ' + req.statusText + ')');
+                }
+            });
+        } catch (err) {
+            error_table(table, err.name + ': ' + err.message); //$.toJSON(err));
+        }
+    }
+}
+
+function reset_deviceprofile() {
+    deviceprofile_id = null;
+    refresh_deviceprofile(null);
+}
+
+function refresh_deviceprofile_list() {
+    var table = $('#deviceprofile_list_table');
+    var properties = ['id', 'name', 'itemType', 'itemId', 'metadata', 'requirements']; //'creator', 'created',
+//    var properties = ['id', 'name', 'type', 'creator', 'created', 'metadata', 'topLevel', 'blobUrl'];
+    refresh_table_list(table, properties, 'deviceprofile/', 'refresh_deviceprofile');
+    return false;
+}
+
+
 // loaded...
 $(document).ready(function() {
     show_div('item_list');
@@ -609,5 +726,6 @@ $(document).ready(function() {
     map_init();
 
     refresh_item_list();
+    refresh_deviceprofile_list();
 
 });

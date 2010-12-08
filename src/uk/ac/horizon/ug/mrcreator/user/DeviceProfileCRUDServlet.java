@@ -33,6 +33,7 @@ import com.google.appengine.api.datastore.Key;
 import uk.ac.horizon.ug.mrcreator.http.CRUDServlet;
 import uk.ac.horizon.ug.mrcreator.http.JsonConstants;
 import uk.ac.horizon.ug.mrcreator.http.RequestException;
+import uk.ac.horizon.ug.mrcreator.model.DeviceProfile;
 import uk.ac.horizon.ug.mrcreator.model.GUIDFactory;
 import uk.ac.horizon.ug.mrcreator.model.Item;
 
@@ -40,10 +41,10 @@ import uk.ac.horizon.ug.mrcreator.model.Item;
  * @author cmg
  *
  */
-public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
+public class DeviceProfileCRUDServlet extends CRUDServlet implements JsonConstants {
 
 	/** cons */
-	public ItemCRUDServlet () {		
+	public DeviceProfileCRUDServlet () {		
 		// filter by creator
 		super(null, null, 0, true);
 	}
@@ -54,7 +55,7 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 	 * @param discardPathParts
 	 * @param filterByCreator
 	 */
-	public ItemCRUDServlet(String listFilterPropertyName,
+	public DeviceProfileCRUDServlet(String listFilterPropertyName,
 			Object listFilterPropertyValue, int discardPathParts,
 			boolean filterByCreator) {
 		super(listFilterPropertyName, listFilterPropertyValue, discardPathParts,
@@ -63,25 +64,29 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 
 	@Override
 	protected Class getObjectClass() {
-		return Item.class;
+		return DeviceProfile.class;
 	}
 
 	@Override
 	protected void listObject(JSONWriter jw, Object o) throws JSONException {
-		Item g = (Item)o;
+		DeviceProfile g = (DeviceProfile)o;
 		jw.object();
 		// ID first
 		jw.key(ID);
 		jw.value(g.getId());
-		if (g.getBlobUrl()!=null) {
-			jw.key(BLOB_URL);
-			jw.value(g.getBlobUrl());
-		}
 		jw.key(CREATED);
 		jw.value(g.getCreated());
 		if (g.getCreator()!=null) {
 			jw.key(CREATOR);
 			jw.value(g.getCreator());
+		}
+		if (g.getItemKey()!=null) {
+			jw.key(ITEM_ID);
+			jw.value(g.getItemKey().getName());
+		}
+		if (g.getItemType()!=null) {
+			jw.key(ITEM_TYPE);
+			jw.value(g.getItemType());
 		}
 		if (g.getMetadata()!=null) {
 			jw.key(METADATA);
@@ -91,11 +96,9 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 			jw.key(NAME);
 			jw.value(g.getName());
 		}
-		jw.key(TOP_LEVEL);
-		jw.value(g.isTopLevel());
-		if (g.getType()!=null) {
-			jw.key(TYPE);
-			jw.value(g.getType());
+		if (g.getRequirements()!=null) {
+			jw.key(REQUIREMENTS);
+			jw.value(g.getRequirements());
 		}
 		jw.endObject();
 	}
@@ -103,22 +106,20 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 	@Override
 	protected Object parseObject(JSONObject json) throws RequestException,
 			IOException, JSONException {
-		Item gc = new Item();
+		DeviceProfile gc = new DeviceProfile();
 		Iterator keys = json.keys();
-		// default!
-		gc.setTopLevel(true);
 		while(keys.hasNext()) {
 			String key = (String)keys.next();
-			if (BLOB_URL.equals(key)) 
-				gc.setBlobUrl(json.getString(key));
-			else if (METADATA.equals(key))
+			if (METADATA.equals(key))
 				gc.setMetadata(json.getString(key));
 			else if (NAME.equals(key))
 				gc.setName(json.getString(key));
-			else if (TOP_LEVEL.equals(key))
-				gc.setTopLevel(json.getBoolean(key));
-			else if (TYPE.equals(key))
-				gc.setType(json.getString(key));
+			else if (ITEM_TYPE.equals(key))
+				gc.setItemType(json.getString(key));
+			else if (ITEM_ID.equals(key))
+				gc.setItemKey(Item.idToKey(json.getString(key)));
+			else if (REQUIREMENTS.equals(key))
+				gc.setRequirements(json.getString(key));
 			else
 				throw new JSONException("Unsupported key '"+key+"' in Item: "+json);
 
@@ -131,23 +132,21 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 	 * @param i
 	 * @throws RequestException
 	 */
-	private void validateUpdateOrCreate(Item i) throws RequestException {
-		if (i.getType()==null)
-			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No type specified for Item");
+	private void validateUpdateOrCreate(DeviceProfile i) throws RequestException {
 		if (i.getName()==null)
-			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No name specified for Item");
+			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No name specified for DeviceProfile");
 		if (i.getMetadata()==null)
-			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No metadata specified for Item");
+			throw new RequestException(HttpServletResponse.SC_BAD_REQUEST,"No metadata specified for DeviceProfile");
 		if (i.getCreator()==null)
-			throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED,"No creator specified for Item");		
+			throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED,"No creator specified for DeviceProfile");		
 	}
 	@Override
 	protected Key validateCreate(Object o) throws RequestException {
-		Item i = (Item)o;
+		DeviceProfile i = (DeviceProfile)o;
 		validateUpdateOrCreate(i);
 		i.setCreated(System.currentTimeMillis());
 		String id = GUIDFactory.newGUID();
-		i.setKey(Item.idToKey(id));
+		i.setKey(DeviceProfile.idToKey(id));
 		return i.getKey();
 	}
 
@@ -157,12 +156,11 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 	@Override
 	protected void validateUpdate(Object newobj, Object oldobj)
 			throws RequestException {
-		Item i = (Item)newobj;
+		DeviceProfile i = (DeviceProfile)newobj;
 		validateUpdateOrCreate(i);
-		Item oi = (Item)oldobj;
+		DeviceProfile oi = (DeviceProfile)oldobj;
 		// these can't be changed...
 		i.setCreated(oi.getCreated());
-		i.setTopLevel(oi.isTopLevel());
 		if (!i.getCreator().equals(oi.getCreator()))
 			throw new RequestException(HttpServletResponse.SC_UNAUTHORIZED, "Update cannot change creator: "+i);
 		if (i.getId()!=null && !i.getId().equals(oi.getId()))
@@ -172,30 +170,11 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 	}
 
 	/* (non-Javadoc)
-	 * @see uk.ac.horizon.ug.locationbasedgame.author.CRUDServlet#getChildScopeServlet(java.lang.String, java.lang.String)
-	 */
-	@Override
-	protected CRUDServlet getChildScopeServlet(String id, String childScope)
-			throws RequestException {
-		if (childScope.equals("member")) {
-			return new ItemMembershipCRUDServlet("contextKey", Item.idToKey(id), 2, true);
-		}
-		if (childScope.equals("context")) {
-			return new ItemMembershipCRUDServlet("itemKey", Item.idToKey(id), 2, true);
-		}
-		if (childScope.equals("deviceprofile")) {
-			return new DeviceProfileCRUDServlet("itemKey", Item.idToKey(id), 2, true);
-		}
-		// TODO Auto-generated method stub
-		return super.getChildScopeServlet(id, childScope);
-	}
-
-	/* (non-Javadoc)
 	 * @see uk.ac.horizon.ug.mrcreator.http.CRUDServlet#getCreator(java.lang.Object)
 	 */
 	@Override
 	protected String getCreator(Object o) {
-		Item i = (Item)o;
+		DeviceProfile i = (DeviceProfile)o;
 		return i.getCreator();
 	}
 
@@ -204,8 +183,18 @@ public class ItemCRUDServlet extends CRUDServlet implements JsonConstants {
 	 */
 	@Override
 	protected void setCreator(Object o, String creator) {
-		Item i = (Item)o;
+		DeviceProfile i = (DeviceProfile)o;
 		i.setCreator(creator);
+	}
+
+	/* (non-Javadoc)
+	 * @see uk.ac.horizon.ug.mrcreator.http.CRUDServlet#validateDelete(java.lang.Object)
+	 */
+	@Override
+	protected Key validateDelete(Object o) throws RequestException {
+		// ok
+		DeviceProfile i = (DeviceProfile)o;
+		return i.getKey();
 	}
 	
 	
