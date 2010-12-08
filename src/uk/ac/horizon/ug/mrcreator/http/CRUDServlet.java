@@ -160,6 +160,16 @@ public abstract class CRUDServlet extends HttpServlet {
     	return KeyFactory.createKey(getObjectClass().getSimpleName(), id);
     }
 
+    public static String [] getPathParts(HttpServletRequest req) {
+		String pathInfo = req.getPathInfo();
+		if (pathInfo==null)
+			pathInfo = "";
+		if (pathInfo.startsWith("/"))
+			pathInfo = pathInfo.substring(1);
+		String pathParts[] = pathInfo.split("/");
+		return pathParts;
+    }
+    
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
 	 */
@@ -169,14 +179,9 @@ public abstract class CRUDServlet extends HttpServlet {
 		try {
 			// TODO move to static method and reuse
 			logger.log(Level.INFO, "doGet("+req.getPathInfo()+")");
-			String pathInfo = req.getPathInfo();
-			if (pathInfo==null)
-				pathInfo = "";
-			String pathParts[] = pathInfo.split("/");
-			// ignore first "part" '' if there is a leading '/' in pathInfo (there should be)
-			int discardPathParts = this.discardPathParts+(pathParts.length>0 && pathParts[0].length()==0 ? 1 : 0);
+			String pathParts[] = getPathParts(req);
 			if (pathParts.length<discardPathParts) {
-				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+pathInfo);
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+req.getPathInfo());
 			}
 			if (pathParts.length==discardPathParts) {
 				// get all
@@ -310,14 +315,9 @@ public abstract class CRUDServlet extends HttpServlet {
 			throws ServletException, IOException {
 		try {
 			logger.log(Level.INFO, "doPost("+req.getPathInfo()+")");
-			String pathInfo = req.getPathInfo();
-			if (pathInfo==null)
-				pathInfo = "";
-			String pathParts[] = pathInfo.split("/");
-			// ignore first "part" '' if there is a leading '/' in pathInfo (there should be)
-			int discardPathParts = this.discardPathParts+(pathParts.length>0 && pathParts[0].length()==0 ? 1 : 0);
+			String pathParts[] = getPathParts(req);
 			if (pathParts.length<discardPathParts) {
-				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+pathInfo);
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+req.getPathInfo());
 			}
 			if (pathParts.length==discardPathParts) {
 				doCreate(req, resp);
@@ -438,14 +438,9 @@ public abstract class CRUDServlet extends HttpServlet {
 		try {
 			// get ID
 			logger.log(Level.INFO, "doPut("+req.getPathInfo()+")");
-			String pathInfo = req.getPathInfo();
-			if (pathInfo==null)
-				pathInfo = "";
-			String pathParts[] = pathInfo.split("/");
-			// ignore first "part" '' if there is a leading '/' in pathInfo (there should be)
-			int discardPathParts = this.discardPathParts+(pathParts.length>0 && pathParts[0].length()==0 ? 1 : 0);
+			String pathParts[] = getPathParts(req);
 			if (pathParts.length<discardPathParts) {
-				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+pathInfo);
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+req.getPathInfo());
 			}
 			if (pathParts.length==discardPathParts) {
 				throw new RequestException(HttpServletResponse.SC_BAD_REQUEST, "Cannot PUT to collection "+req.getPathInfo());
@@ -520,14 +515,9 @@ public abstract class CRUDServlet extends HttpServlet {
 		try {
 			// get ID
 			logger.log(Level.INFO, "doDelete("+req.getPathInfo()+")");
-			String pathInfo = req.getPathInfo();
-			if (pathInfo==null)
-				pathInfo = "";
-			String pathParts[] = pathInfo.split("/");
-			// ignore first "part" '' if there is a leading '/' in pathInfo (there should be)
-			int discardPathParts = this.discardPathParts+(pathParts.length>0 && pathParts[0].length()==0 ? 1 : 0);
+			String pathParts[] = getPathParts(req);
 			if (pathParts.length<discardPathParts) {
-				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+pathInfo);
+				throw new RequestException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Not enough part in path ("+pathParts.length+" vs "+discardPathParts+") for "+req.getPathInfo());
 			}
 			if (pathParts.length==discardPathParts) {
 				throw new RequestException(HttpServletResponse.SC_BAD_REQUEST, "Cannot PUT to collection "+req.getPathInfo());

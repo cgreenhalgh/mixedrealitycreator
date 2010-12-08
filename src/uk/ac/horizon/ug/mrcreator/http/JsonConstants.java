@@ -28,9 +28,12 @@ public interface JsonConstants {
 	public static final String CONTEXT_ID = "contextId";
 	public static final String CREATED = "created";
 	public static final String CREATOR = "creator";
+	public static final String DEVICE_PROFILE = "deviceProfile";
 	public static final String ID = "id";
+	public static final String ITEM = "item";
 	public static final String ITEM_ID = "itemId";
 	public static final String ITEM_TYPE = "itemType";
+	public static final String MEMBERS = "members";
 	public static final String METADATA = "metadata";
 	public static final String NAME = "name";
 	public static final String REQUIREMENTS = "requirements";
