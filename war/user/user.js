@@ -11,6 +11,22 @@ function log(msg) {
     alert(msg);
 }
 
+// jquery.escape 1.0 - escape strings for use in jQuery selectors
+// http://ianloic.com/tag/jquery.escape
+// Copyright 2009 Ian McKellar <http://ian.mckellar.org/>
+// Just like jQuery you can use it under either the MIT license or the GPL
+// (see: http://docs.jquery.com/License)
+(function() {
+    escape_re = /[#;&,\.\+\*~':"!\^\$\[\]\(\)=>|\/\\]/;
+    jQuery.escape = function jQuery$escape(s) {
+        var left = s.split(escape_re, 1)[0];
+        if (left == s) return s;
+        return left + '\\' +
+    s.substr(left.length, 1) +
+    jQuery.escape(s.substr(left.length + 1));
+    }
+})();
+//END jquery.escape 1.0
 
 function show_div(id) {
     $('body > div').hide('fast');
@@ -340,13 +356,14 @@ function update_member_list(items, members) {
             row += '<td class="list_item">' + item[properties[i]] + '</td>';
         }
         //row += '<td><input type="text"  name="metadata" value="' + item.memberId + '"/></td>';
-        row += '<td><input type="text"  name="metadata" value="' + item.memberMetadata + '"/></td><td><input type="text" name="sortValue" value="' + item.memberSortValue + '"/></td>';
+        row += '<td><input type="text"  name="metadata'+di+'"/></td><td><input type="text" name="sortValue'+di+'" value="' + item.memberSortValue + '"/></td>';
         if (item.isMember)
             row += '<td><input type="button" value="Update" onclick="update_member(' + di + ');"/><input type="button" value="Remove" onclick="delete_member(' + di + ');"/></td>';
         else
         	row += '<td><input type="button" value="Add" onclick="add_member('+di+');"/></td>';
         row += '</tr>';
         table.append(row);
+        $('input[name=metadata'+di+']', table).attr('value', item.memberMetadata);
     }
 }
 function add_member(di) {
@@ -355,8 +372,8 @@ function add_member(di) {
     membership.itemId = member_data[di].id;
     membership.contextId = item_id;
     var table = $('#member_list_table');
-    membership.metadata = String($('input[name=metadata]',table).attr('value'));
-    membership.sortValue = String($('input[name=sortValue]',table).attr('value'));
+    membership.metadata = String($('input[name=metadata'+di+']',table).attr('value'));
+    membership.sortValue = String($('input[name=sortValue'+di+']',table).attr('value'));
     var data = $.toJSON(membership);
     try {
         var url = 'item/'+item_id+'/member/';
@@ -385,8 +402,8 @@ function update_member(di) {
     membership.itemId = member_data[di].id;
     membership.contextId = item_id;
     var table = $('#member_list_table');
-    membership.metadata = String($('input[name=metadata]', table).attr('value'));
-    membership.sortValue = String($('input[name=sortValue]', table).attr('value'));
+    membership.metadata = String($('input[name=metadata' + di + ']', table).attr('value'));
+    membership.sortValue = String($('input[name=sortValue' + di + ']', table).attr('value'));
     var data = $.toJSON(membership);
     try {
         var url = 'item/' + item_id + '/member/' + item.memberId;
@@ -433,8 +450,164 @@ function delete_member(di) {
     return false;
 }
 
+// map...
+// open layers map and map imagery layer
+var map, layer;
+// map marker layer
+var markers;
+// map marker icon
+var player_icon;
+var other_icon;
+// player marker
+var player_marker = null;
+// other player's markers
+var other_markers_map = {};
+var other_names_map = {};
+
+// default/standard click handler as class
+OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {
+    defaultHandlerOptions: {
+        'single': true,
+        'double': false,
+        'pixelTolerance': 0,
+        'stopSingle': false,
+        'stopDouble': false
+    },
+
+    initialize: function(options) {
+        this.handlerOptions = OpenLayers.Util.extend(
+                        {}, this.defaultHandlerOptions
+                    );
+        OpenLayers.Control.prototype.initialize.apply(
+                        this, arguments
+                    );
+        this.handler = new OpenLayers.Handler.Click(
+                        this, {
+                            'click': this.trigger
+                        }, this.handlerOptions
+                    );
+    },
+
+    trigger: function(e) {
+        var lonlat = map.getLonLatFromViewPortPx(e.xy);
+        //alert("You clicked near " + lonlat.lat + " N, " +
+        //                              +lonlat.lon + " E");
+        //alert('lonlat = ' + lonlat);
+        lonlat = lonlat.transform(
+                    map.getProjectionObject(),
+                    new OpenLayers.Projection("EPSG:4326")
+                    );
+        alert('trigger: ' + e);
+        //        alert('lonlat = ' + lonlat);
+        //        $('#latlon_out').attr('value', new Number(lonlat.lon).toFixed(6) + ',' + new Number(lonlat.lat).toFixed(6));
+    }
+});
+
+function onFeatureSelect(feature) {
+    alert('select ' + feature);
+}
+function onFeatureUnselect(feature) {
+    alert('unselect ' + feature);
+}
+
+function map_init() {
+    map = new OpenLayers.Map('map');
+    layer = new OpenLayers.Layer.OSM("Simple OSM Map");
+    map.addLayer(layer);
+
+    markers = new OpenLayers.Layer.Markers("Markers");
+    map.addLayer(markers);
+
+    var size = new OpenLayers.Size(21, 25);
+    var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
+    player_icon = new OpenLayers.Icon('../lib/img/marker.png', size, offset);
+    // bigger for debug
+    size = new OpenLayers.Size(21, 25);
+    other_icon = new OpenLayers.Icon('../lib/img/marker-blue.png', size, offset);
+
+    // doesn't work with Marker layer?
+    //var selectControl = new OpenLayers.Control.SelectFeature(markers,
+    //            { onSelect: onFeatureSelect, onUnselect: onFeatureUnselect });
+    //map.addControl(selectControl);
+    //selectControl.activate();
+
+    map.setCenter(
+                new OpenLayers.LonLat(-1.188, 52.953).transform(
+                    new OpenLayers.Projection("EPSG:4326"),
+                    map.getProjectionObject()
+                ), 12
+            );
+
+    // add click handler
+    //var click = new OpenLayers.Control.Click();
+    //map.addControl(click);
+    //click.activate();
+}
+function show_map() {
+    show_div('map_view');
+
+    refresh_map();
+}
+function refresh_map() {
+    // remove old markers
+    for (var id in other_markers_map) {
+        var marker = other_markers_map[id];
+        markers.removeMarker(marker);
+    }
+    markers.redraw();
+    other_markers_map = {};
+    if (item_id == null)
+        return false;
+    // get new markers
+    try {
+        $.ajax({ url: 'item/' + item_id + '/member/',
+            type: 'GET',
+            contentType: 'application/json',
+            processData: false,
+            data: null,
+            dataType: 'json',
+            success: function success(data, status) {
+                update_markers(data);
+
+            },
+            error: function error(req, status) {
+                alert(status + ' (' + req.status + ': ' + req.statusText + ')');
+            }
+        });
+    } catch (err) {
+        alert(err.name + ': ' + err.message); //$.toJSON(err));
+    }
+    return false;
+}
+function update_markers(members) {
+    for (var i=0; i<members.length; i++) {
+        var member = members[i];
+        try {
+            var meta = $.parseJSON(String(member.metadata));
+            var latitudeE6 = meta.latitudeE6;
+            var longitudeE6 = meta.longitudeE6;
+            //alert('marker at ' + longitudeE6 + ',' + latitudeE6);
+            var marker = new OpenLayers.Marker(
+                    new OpenLayers.LonLat(longitudeE6 * 0.000001, latitudeE6 * 0.000001).transform(
+                        new OpenLayers.Projection("EPSG:4326"),
+                        map.getProjectionObject()
+                    ), other_icon.clone());
+            markers.addMarker(marker);
+            other_markers_map[member.id] = marker;
+        }
+        catch (err) {
+            alert('Error in metadata for ' + member.id + ': ' + member.metadata + ' (' + err.message + ': ' + err.description + ')');
+        }
+    }
+    markers.redraw();
+}
+
 // loaded...
 $(document).ready(function() {
     show_div('item_list');
+
+    map_init();
+
     refresh_item_list();
+
 });
